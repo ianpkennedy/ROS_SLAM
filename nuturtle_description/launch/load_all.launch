@@ -1,0 +1,94 @@
+<launch>
+
+    <!-- source used for this launch file (11/08): https://community.husarion.com/t/rviz-with-multiple-rosbots/792/3 -->
+
+    <arg name="model" default="burger" doc="model type[burger]" />
+    <arg name="use_rviz" default="true" doc="launches rviz or no"/>
+    <arg name="use_jsp" default="true" doc="launches joint state publisher or no"/>
+    <arg name="multi_robot_name" default="" doc="multi robot argument must be set for launchfile"/>
+
+
+    <arg name="urdf_file_red" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=red" />
+    <param name="red/robot_description" command="$(arg urdf_file_red)"/>
+
+    <group ns="red">
+        <group if="$(arg use_jsp)">
+            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                <param name="use_gui" value="true"/>
+                <param name="rate" value="50"/> 
+            </node>
+        </group>
+
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="publish_frequency" type="double" value="50.0" />
+            <param name="tf_prefix" value="$(arg multi_robot_name)"/>   
+        </node>
+        <node pkg="tf2_ros" type="static_transform_publisher" name="broadcaster" args="1 0 0 0 0 0 world red-base_footprint"/>
+    </group>
+    
+    
+    <arg name="urdf_file_green" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=green" />
+    <param name="green/robot_description" command="$(arg urdf_file_green)"/>
+
+    <group ns="green">
+        <group if="$(arg use_jsp)">
+            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                <param name="use_gui" value="true"/>
+                <param name="rate" value="50"/> 
+            </node>
+        </group>
+
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="publish_frequency" type="double" value="50.0" />
+            <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+        </node>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="broadcaster" args="0 1 0 0 0 0 world green-base_footprint"/>
+
+    </group>
+
+
+    <arg name="urdf_file_blue" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=blue" />
+    <param name="blue/robot_description" command="$(arg urdf_file_blue)"/>
+
+    <group ns="blue">
+        <group if="$(arg use_jsp)">
+            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                <param name="use_gui" value="true"/>
+                <param name="rate" value="50"/> 
+            </node>
+        </group>
+
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="publish_frequency" type="double" value="50.0" />
+            <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+        </node>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="broadcaster" args="-1 0 0 0 0 0 world blue-base_footprint"/>
+
+    </group>
+
+    <arg name="urdf_file_black" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=black" />
+    <param name="black/robot_description" command="$(arg urdf_file_black)"/>
+
+    <group ns="black">
+        <group if="$(arg use_jsp)">
+            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                <param name="use_gui" value="true"/>
+                <param name="rate" value="50"/> 
+            </node>
+        </group>
+
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="publish_frequency" type="double" value="50.0" />
+            <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+        </node>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="broadcaster" args="0 -1 0 0 0 0 world black-base_footprint"/>
+
+    </group>
+
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d$(find nuturtle_description)/config/basic_all.rviz"/>
+
+
+</launch>

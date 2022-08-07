@@ -1,0 +1,155 @@
+<launch>
+    <arg name="model" default="burger" doc="model type[burger]" />
+    <arg name="cmd_src" default="teleop" doc="twist source" />
+    <arg name="robot" default="nusim" doc="launch mode"/>
+    <arg name="use_rviz" default="false" doc="launches RVIZ in non-nusim context"/>
+    <arg name="use_remote" default="false" doc="enables use of cross compilation"/>
+    <arg name="use_jsp" default="false" doc="launches joint state publisher or no"/>
+    <arg name="color" default="blue" doc="robot odom  color"/>
+    <arg name="color_sim" default="red" doc="robot sim color"/>
+    <arg name="color_slam" default="green" doc="robot slam color"/>
+
+    <arg name="rviz_color" default="r" doc="color of the environment"/>
+    <arg name="use_sim" default="true" doc="simulate robot motion with simulator"/>
+    <arg name="config_file" default="basic_world.yaml" doc="sim world yaml to launch"/>
+
+
+    <arg name="multi_robot_name" default="" doc="multi_robot_name must be set to empty for this sim"/>
+
+    
+    <rosparam file="$(find nuturtle_description)/config/diff_params.yaml"/>
+    <param name="odom_id" type="string" value="world"/>
+    <param name="body_id" type="string" value="blue-base_footprint"/>
+    <param name="use_known" type="bool" value="true"/>
+
+    <!-- <node name="odometry" pkg="nuturtle_control" type="odometry"/> -->
+    <!-- <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"/> -->
+
+    <group if="$(eval robot =='nusim')">
+
+        <param name="wheel_left" type="string" value="wheel_left_joint"/>
+        <param name="wheel_right" type="string" value="wheel_right_joint"/>
+    
+        <node pkg="tf2_ros" type="static_transform_publisher" name="broadcastermap" args="0 0 0 0 0 0 world map"/>
+        <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="broadcasterodom" args="0 0 0 0 0 0 map odom"/> -->
+
+
+        <node name="odometry" pkg="nuturtle_control" type="odometry">
+            <param name="body_id" type="string" value="blue-base_footprint"/>
+            <remap from="joint_states" to="blue/joint_states"/>
+            <rosparam file="$(find nusim)/config/$(arg config_file)"/>
+        </node>
+
+
+        <node name="slam" pkg="nuslam" type="slam" output="screen">
+            <param name="body_id" type="string" value="green-base_footprint"/>
+            <!-- <param name="odom_id" type="string" value="odom"/> -->
+            <remap from="joint_states" to="green/joint_states"/>
+            <rosparam file="$(find nusim)/config/$(arg config_file)"/>
+        </node>
+
+        <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface">
+            <remap from="joint_states" to="blue/joint_states"/>
+            <rosparam file="$(find nusim)/config/$(arg config_file)"/>
+            <param name="color" type="string" value="$(eval arg('color')+'-')"/>
+        </node>
+
+        <node name="nusim" pkg="nusim" type="nusim" output="screen">
+            <rosparam file="$(find nusim)/config/$(arg config_file)"/>
+            <rosparam file="$(find nuturtle_description)/config/diff_params.yaml"/>
+            <remap from="red/wheel_cmd" to="wheel_cmd"/>
+            <remap from="nusim/red/sensor_data" to="sensor_data"/>
+            <param name="use_sim" type="bool" value="$(eval arg('use_sim'))"/>
+            <param name="rviz_color" type="string" value="$(eval arg('rviz_color'))"/>
+            <param name="gauss_noise" type="double" value="0.004"/>
+            <param name="slip_min" type="double" value="-0.0002"/>
+            <param name="slip_max" type="double" value="0.0006"/>
+    
+        </node>
+
+        <group if="$(eval cmd_src =='circle')">
+            <node name="circle" pkg="nuturtle_control" type="circle">
+                <remap from="circle/cmd_vel" to="cmd_vel"/>
+                <param name="frequency" type="int" value="500"/>
+            </node>    
+        </group>
+
+        <group if="$(eval cmd_src =='teleop')">
+            <include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch"/>
+        </group> 
+
+        <group if="$(eval cmd_src =='none')">
+            <!-- launch some other node -->
+        </group> 
+
+        <group ns="$(arg color)">
+
+            <arg name="urdf_file" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=$(arg color)" />
+            <param name="robot_description" command="$(arg urdf_file)"/>    
+
+            <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+                <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+            </node>
+    
+        </group>
+   
+        <group ns="$(arg color_sim)">
+
+            <arg name="urdf_file" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=$(arg color_sim)" />
+            <param name="robot_description" command="$(arg urdf_file)"/>    
+
+            <group if="$(arg use_jsp)">
+                <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                    <!-- <remap from="red/joint_states" to="blue/joint_states"/> -->
+                    <param name="use_gui" value="true"/>
+                    <!-- <remap from="blue/joint_states" to="red/joint_states"/> -->
+
+                </node>
+            </group>
+
+            
+    
+            <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+                <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+                <!-- <remap from="red/joint_states" to="blue/joint_states"/> -->
+
+            </node>
+
+            
+         </group>
+
+         <group ns="$(arg color_slam)">
+
+            <arg name="urdf_file" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=$(arg color_slam)" />
+            <param name="robot_description" command="$(arg urdf_file)"/>    
+
+            <group if="$(arg use_jsp)">
+                <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                    <!-- <remap from="red/joint_states" to="blue/joint_states"/> -->
+                    <param name="use_gui" value="true"/>
+                    <!-- <remap from="blue/joint_states" to="red/joint_states"/> -->
+
+                </node>
+            </group>
+
+            
+    
+            <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+                <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+                <!-- <remap from="red/joint_states" to="blue/joint_states"/> -->
+
+            </node>
+
+            <group if="$(eval use_rviz)">
+
+                <node name="rviz" pkg="rviz" type="rviz" args="-d$(find nuslam)/config/nusim_odom_slam.rviz " required="true">
+                </node>
+            </group>
+
+            
+         </group>
+
+
+    </group>
+
+</launch>

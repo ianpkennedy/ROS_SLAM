@@ -1,0 +1,136 @@
+<launch>
+    <arg name="cmd_src" default="teleop" doc="twist source" />
+    <arg name="robot" default="localhost" doc="turtlebot name"/>
+    <arg name="multi_robot_name" default="" doc="multi_robot_name must be set to empty"/>
+    <arg name="color" default="blue" doc="robot odom  color"/>
+    <arg name="m" default="turtlebot" doc="machine"/>
+    <arg name="model" default="burger" doc="model type[burger]" />
+    <arg name="use_jsp" default="false" doc="launches joint state publisher or no"/>
+    <arg name="use_rviz" default="false" doc="launches joint state publisher or no"/>
+    <arg name="rviz_color" default="r" doc="color of the environment"/>
+    <arg name="use_sim" default="false" doc="simulate robot motion with simulator"/>
+    <arg name="config_file" default="basic_world.yaml" doc="sim world yaml to launch"/>
+    <arg name="color_slam" default="green" doc="robot slam color"/>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="broadcastermap" args="0 0 0 0 0 0 world map"/>
+
+    <rosparam file="$(find nuturtle_description)/config/diff_params.yaml"/>
+    <param name="odom_id" type="string" value="world"/>
+    <param name="body_id" type="string" value="blue-base_footprint"/>
+    <param name="use_unknown" type="bool" value="true"/>
+
+
+    <param name="wheel_left" type="string" value="wheel_left_joint"/>
+    <param name="wheel_right" type="string" value="wheel_right_joint"/>
+
+    <machine address="$(arg robot)" name="turtlebot" env-loader="/home/msr/install/share/nuturtle_control/loader.sh" user="msr"/>
+
+
+    <node name="odometry" pkg="nuturtle_control" type="odometry"  machine="turtlebot">
+        <param name="body_id" type="string" value="blue-base_footprint')"/>
+        <remap from="joint_states" to="blue/joint_states"/>
+        <rosparam file="$(find nusim)/config/$(arg config_file)"/>
+
+    </node>
+
+    <node name="landmarks" pkg="nuslam" type="landmarks" >
+        <remap from="/nusim/laser_sim" to="/scan"/>
+    </node>
+
+    <node name="slam" pkg="nuslam" type="slam"   output="screen">
+        <param name="body_id" type="string" value="green-base_footprint"/>
+        <remap from="joint_states" to="green/joint_states"/>
+        <rosparam file="$(find nusim)/config/$(arg config_file)"/>
+    </node>
+
+
+    <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface" machine="turtlebot">
+       <remap from="joint_states" to="blue/joint_states"/>
+       <param name="color" type="string" value="$(eval arg('color')+'-')"/>
+       <rosparam file="$(find nusim)/config/$(arg config_file)"/>
+
+    </node>
+
+    <group if="$(eval cmd_src =='circle')">
+        <node name="circle" pkg="nuturtle_control" type="circle" >
+            <remap from="circle/cmd_vel" to="cmd_vel"/>
+            <param name="frequency" type="int" value="500"/>
+        </node>
+    </group>
+
+
+
+    <group ns="$(arg color)">
+
+        <arg name="urdf_file" default="$(find xacro)/xacro '$(find nusim)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=$(arg color)" />
+        <param name="robot_description" command="$(arg urdf_file)"/>    
+       
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+        </node>
+
+
+        <group if="$(arg use_jsp)">
+            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                <param name="use_gui" value="true"/>
+            </node>
+        </group>
+    </group>
+
+
+    <group ns="$(arg color_slam)">
+
+        <arg name="urdf_file" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=$(arg color_slam)" />
+        <param name="robot_description" command="$(arg urdf_file)"/>    
+
+        <group if="$(arg use_jsp)">
+            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                <param name="use_gui" value="true"/>
+            </node>
+        </group>
+
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+        </node>
+        
+        
+        <group if="$(arg use_rviz)">
+            <node name="rviz" pkg="rviz" type="rviz" args="-d$(find nuslam)/config/real_odom_slam.rviz " required="true">
+                <param name="robot_description" value="$(arg color)/robot_description"/>
+            </node>
+            <node name="nuwall" pkg="nusim" type="nusim" >
+                <rosparam file="$(find nusim)/config/$(arg config_file)"/>
+                <param name="rviz_color" type="string" value="$(eval arg('rviz_color'))"/>
+                <param name="use_sim" type="bool" value="$(eval arg('use_sim'))"/>
+            </node>
+
+        </group>
+
+    </group>
+
+
+
+    <group if="$(eval cmd_src =='teleop')">
+        <include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch"/>
+    </group>
+
+    <group if="$(eval cmd_src =='none')">
+        <!-- launch some other node -->
+    </group>
+
+    <!-- (02/05): The following nodes taken from the noetic turtlebot3_bringup package -->
+    <node pkg="rosserial_python" type="serial_node.py" name="turtlebot3_core" output="screen" machine="turtlebot">
+        <param name="port" value="/dev/ttyACM0"/>
+        <param name="baud" value="115200"/>
+        <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+    </node>
+    <node pkg="hls_lfcd_lds_driver" type="hlds_laser_publisher" name="turtlebot3_lds" output="screen" machine="turtlebot">
+      <param name="port" value="/dev/ttyUSB0"/>
+      <param name="frame_id" value="$(eval arg('color')+'-base_scan')"/>
+   </node>
+
+
+   <node pkg="turtlebot3_bringup" type="turtlebot3_diagnostics" name="turtlebot3_diagnostics" output="screen"/>
+
+
+</launch>

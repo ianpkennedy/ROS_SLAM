@@ -1,0 +1,12 @@
+<launch>
+
+<node name="circle" pkg="nuturtle_control" type="circle"/>
+
+<param name="turtle_circle/topic" value="/circle/cmd_vel" />
+<param name="turtle_circle/hz" value="100.0" />
+<param name="turtle_circle/hzerror" value="0.5" />
+<param name="turtle_circle/test_duration" value="1.0" />
+
+<test test-name="turtle_circle" pkg="rostest" type="hztest" name="turtle_circle" />
+
+</launch>

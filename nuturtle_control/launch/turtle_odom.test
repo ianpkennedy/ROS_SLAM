@@ -1,0 +1,36 @@
+<launch>
+
+
+    <rosparam file="$(find nuturtle_description)/config/diff_params.yaml"/>
+
+    <param name="odom_id" type="string" value="world"/>
+    <param name="body_id" type="string" value="base_footprint"/>
+    <param name="wheel_left" type="string" value="wheel_left_joint"/>
+    <param name="wheel_right" type="string" value="wheel_right_joint"/>
+    
+    <node pkg="tf2_ros" type="static_transform_publisher" name="broadcaster" args="0 0 0 0 0 0 world odom"/>
+
+
+    <arg name="color" default="red" doc="robot color"/>
+    <arg name="multi_robot_name" default="" doc="multi_robot_name must be set to empty for this sim"/>
+    <arg name="model" default="burger" doc="model type[burger]" />
+
+
+
+    <group ns="$(arg color)">
+
+    <arg name="urdf_file" default="$(find xacro)/xacro '$(find nusim)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=$(arg color)" />
+    <param name="robot_description" command="$(arg urdf_file)"/>  
+
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+        <param name="use_gui" value="true"/>
+    </node>
+
+
+    </group>
+
+    <node pkg="nuturtle_control" type="odometry" name="odometry" />
+    <test test-name="turtle_odom_test_node" pkg="nuturtle_control" type="turtle_odom_test_node" name="turtle_odom_test_node"/>
+
+
+</launch>

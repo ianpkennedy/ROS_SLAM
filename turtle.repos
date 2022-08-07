@@ -1,0 +1,9 @@
+repositories:
+  hw1:
+    type: git
+    url: git@github.com:ME495-Navigation/slam-project-ikc8581.git
+    version: main
+  nuturtlebot_msgs:
+    type: git
+    url: https://github.com/ME495-Navigation/nuturtlebot_msgs.git
+    version: main

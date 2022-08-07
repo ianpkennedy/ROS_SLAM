@@ -1,0 +1,16 @@
+<launch>
+    <arg name="color" default="blue" doc="robot odom  color"/>
+
+    <rosparam file="$(find nuturtle_description)/config/diff_params.yaml"/>
+    <param name="wheel_left" type="string" value="wheel_left_joint"/>
+    <param name="wheel_right" type="string" value="wheel_right_joint"/>
+    
+    <node pkg="nuturtle_control" type="turtle_interface" name="turtle_interface" >
+
+        <rosparam file="$(find nusim)/config/basic_world.yaml"/>
+        <param name="color" type="string" value="$(eval arg('color')+'-')"/>
+
+    </node>    
+    <test test-name="turtle_interface_test" pkg="nuturtle_control" type="turtle_interface_test" name="turtle_interface_test"/>
+
+</launch>

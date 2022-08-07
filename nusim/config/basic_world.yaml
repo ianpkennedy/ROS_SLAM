@@ -1,0 +1,19 @@
+x0: 0.0
+y0: 0.0
+theta0: 0.0
+rate: 500
+basic_sensor_variance: 0.004
+max_range: 3.5
+min_range: 0.12
+resolution: 360
+angle_increment: 1.0
+
+
+obstacles/x: [-0.9,0.5,0.8,-0.95,2.0,2.5,2.5,-1.0,0.5,1.05,1.0,-2.0,2.0,-2.0,-2.5.0,-2.0]
+obstacles/y: [-0.7,-1.0,0.5,1.05,-1.0,0.5,1.05,2.0,2.5,2.5,1.0,2.5,2.5,2.0,-2.5,-1]
+obstacles/r: [0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08]
+
+obstacles/x_length: 6.0
+obstacles/y_length: 6.0
+obstacles/thickness: 0.1
+

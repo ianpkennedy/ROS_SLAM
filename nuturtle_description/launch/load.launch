@@ -1,0 +1,44 @@
+<launch>
+
+    <!-- 
+    Sources used for this launch file script:
+    01/06 https://answers.ros.org/question/256417/how-do-a-fix-this-enviroment-error/
+    01/06 https://ubuntu.com/blog/simulate-the-turtlebot3
+    01/07 https://answers.ros.org/question/267328/how-to-put-urdf-in-parameter-server/, https://answers.ros.org/question/38956/pass-parameters-to-xacro-in-launch-file/ , https://github.com/ros/xacro/issues/176
+    -->
+
+
+    <arg name="model" default="burger" doc="model type[burger]" />
+    <arg name="use_rviz" default="true" doc="launches rviz or no"/>
+    <arg name="use_jsp" default="false" doc="launches joint state publisher or no"/>
+    <arg name="multi_robot_name" default="" doc="multi robot arg must be set for launchfile"/>
+    <arg name="color" default="black" doc="this is the color of the turtlebot in question"/>
+
+    <group ns="$(arg color)">
+        <group if="$(arg use_jsp)">
+            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                <param name="use_gui" value="true"/>
+                <param name="rate" value="50"/> 
+            </node>
+        </group>
+    
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="publish_frequency" type="double" value="50.0" />
+            <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+        </node>
+    
+        <arg name="urdf_file" default="$(find xacro)/xacro '$(find nuturtle_description)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=$(arg color)" />
+        <param name="robot_description" command="$(arg urdf_file)"/>
+    
+        <group if="$(arg use_rviz)">
+            <node name="rviz" pkg="rviz" type="rviz" required = "true" args="-d$(find nuturtle_description)/config/basic.rviz -f$(arg color)-base_footprint">
+                <param name="robot_description" value="$(arg color)/robot_description"/>
+            </node>
+        </group>
+    
+    </group>
+
+
+
+
+</launch>

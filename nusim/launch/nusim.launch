@@ -1,0 +1,64 @@
+<launch>
+        <!-- 
+    Sources used for this launch file script:
+    01/06 https://answers.ros.org/question/256417/how-do-a-fix-this-enviroment-error/
+    01/06 https://ubuntu.com/blog/simulate-the-turtlebot3
+    01/07 https://answers.ros.org/question/267328/how-to-put-urdf-in-parameter-server/, https://answers.ros.org/question/38956/pass-parameters-to-xacro-in-launch-file/ , https://github.com/ros/xacro/issues/176
+    -->
+    
+    <arg name="model" default="burger" doc="model type[burger]" />
+    <arg name="use_jsp" default="false" doc="launches joint state publisher or no"/>
+    <arg name="color" default="red" doc="robot color"/>
+    <arg name="multi_robot_name" default="" doc="multi_robot_name must be set to empty for this sim"/>
+    <arg name="rviz_color" default="r" doc="color of the environment"/>
+    <arg name="use_sim" default="false" doc="simulate robot motion with simulator"/>
+    <arg name="config_file" default="basic_world.yaml" doc="sim world yaml to launch"/>
+
+    <rosparam file="$(find nuturtle_description)/config/diff_params.yaml"/>
+    
+    <param name="body_id" type="string" value="$(eval arg('color')+'-base_footprint')"/>
+    <param name="wheel_left" type="string" value="red-wheel_left_link"/>
+    <param name="wheel_right" type="string" value="red-wheel_right_link"/>
+    <param name="rviz_color" type="string" value="$(eval arg('rviz_color'))"/>
+    <param name="config_file" type="string" value="$(eval arg('config_file'))"/>
+
+    <!-- <rosparam file="$(find nusim)/config/basic_world.yaml"/> -->
+
+    <node name="nusim" pkg="nusim" type="nusim" output="screen">
+        <rosparam file="$(find nusim)/config/$(arg config_file)" subst_value="true">
+            
+        </rosparam>
+        <param name="rviz_color" type="string" value="$(eval arg('rviz_color'))"/>
+        <remap from="red/wheel_cmd" to="wheel_cmd"/>
+        <remap from="nusim/red/sensor_data" to="sensor_data"/>
+        <param name="use_sim" type="bool" value="$(eval arg('use_sim'))"/>
+        <param name="gauss_noise" type="double" value="1.0"/>
+        <param name="slip_min" type="double" value="-0.1"/>
+        <param name="slip_max" type="double" value="0.1"/>
+
+    </node>
+
+
+    <group ns="$(arg color)">
+
+        <arg name="urdf_file" default="$(find xacro)/xacro '$(find nusim)/urdf/turtlebot3_$(arg model).urdf.xacro' color:=$(arg color)" />
+        <param name="robot_description" command="$(arg urdf_file)"/>    
+
+        <group if="$(arg use_jsp)">
+            <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+                <param name="use_gui" value="true"/>
+            </node>
+        </group>
+    
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+        </node>
+
+        <node name="rviz" pkg="rviz" type="rviz" args="-d$(find nusim)/config/nusim.rviz " required="true">
+            <param name="robot_description" value="$(arg color)/robot_description"/>
+        </node>
+        
+    </group>
+
+
+</launch>

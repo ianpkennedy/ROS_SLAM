@@ -1,0 +1,35 @@
+<launch>
+    <arg name="robot" default="nusim" doc="turtlebot name"/>
+    <arg name="use_rviz" default="true" doc="launches RVIZ in non-nusim context"/>
+    <arg name="cmd_src" default="teleop" doc="twist source" />
+    <arg name="config_file" default="basic_world.yaml" doc="sim world yaml to launch"/>
+
+
+    <group if="$(eval robot == 'nusim')">
+        <node name="landmarks" pkg="nuslam" type="landmarks"/>
+
+        <include file="$(find nuturtle_control)/launch/start_robot.launch">     
+            <arg name="cmd_src" value="$(arg cmd_src)" />
+            <arg name="robot" value="$(arg robot)"/>
+            <arg name="use_rviz" value="$(arg use_rviz)"/>
+            <arg name="config_file" default="$(arg config_file)" doc="sim world yaml to launch"/>
+
+        </include>
+    </group>
+
+
+    <group unless="$(eval robot == 'nusim')">
+        <machine address="$(arg robot)" name="turtlebot" env-loader="/home/msr/install/share/nuturtle_control/loader.sh" user="msr"/>
+        <node name="landmarks" pkg="nuslam" type="landmarks" machine="turtlebot">
+            <remap from="/nusim/laser_sim" to="/scan"/>
+        </node>
+        <include file="$(find nuturtle_control)/launch/start_robot.launch">     
+            <arg name="cmd_src" value="$(arg cmd_src)" />
+            <arg name="robot" value="$(arg robot)"/>
+            <arg name="use_rviz" value="$(arg use_rviz)"/>
+
+        </include>
+
+    </group>
+
+</launch>
