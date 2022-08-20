@@ -4,12 +4,6 @@
 
 
 
-
-## Note: a 10 second buffer time has been placed on launching nodes incorporate encoder measurements during which robots will not move. THis was to throwout erroneous initial encoder data that resulted in incorrect starting positions. After the 10 second timer, commands can be sent to move the robot normally.  
-\
-\
-\
-
 # Package List
 This repository consists of several ROS packages
 
@@ -22,7 +16,14 @@ This repository consists of several ROS packages
 - nuturtle_control - This package provides the ability to launch the robot in simulation, or run the same operations on an actual turtlebot
 
 - nuslam - provides SLAM functionality to the turtlebot
-
+\
+\
+\
+\
+\
+\
+\
+\
 
 ## Homework 2 part F5
 
