@@ -17,13 +17,13 @@ This repository consists of several ROS packages
 
 - nuslam - provides SLAM functionality to the turtlebot
 \
-\
-\
-\
-\
-\
-\
-\
+
+The blue robot represents the pure odometry estimate of the robot, while the green bot represents the EKF-based SLAM position of the robot. Green markers represent the estimated location of landmarks in the environment, that are identified from clustering and circle ML algorithms. Data association was implemented using a Mahalanobis distance algorithm.
+
+Demo of RVIZ video:
+
+![alt-text](https://github.com/ianpkennedy/ROS_SLAM/blob/main/nuslam/slam_demo.gif)
+
 
 ## Homework 2 part F5
 
